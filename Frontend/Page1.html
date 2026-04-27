@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Company Employee Dashboard</title>
+
+<style>
+body {margin:0; font-family: Arial, sans-serif; background:#f5f6fa;}
+header {background:#2c3e50; padding:15px 20px; color:white; display:flex; justify-content:space-between; align-items:center;}
+header h1 {margin:0; font-size:22px;}
+.header-buttons button {margin-left:10px;}
+.view-all-btn, .attendance-btn {background:#3498db; border:none; color:white; padding:10px 15px; border-radius:5px; cursor:pointer; font-size:14px;}
+.container {padding:20px;}
+.company {background:white; margin-bottom:20px; border-radius:6px; padding:15px; box-shadow:0 2px 4px rgba(0,0,0,0.1); cursor:pointer;}
+.company h2 {margin:0; font-size:22px;}
+.employee-table {margin-top:10px; display:none;}
+table {width:100%; border-collapse:collapse; margin-top:10px; background:white;}
+table th, table td {border:1px solid #ddd; padding:8px; font-size:14px; text-align:left;}
+table th {background:#34495e; color:white;}
+.modal-bg {display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000; overflow:auto;}
+.modal {background:white; padding:20px; width:95%; max-width:1200px; max-height:90%; border-radius:8px; position:relative; overflow:auto;}
+.close-modal {float:right; cursor:pointer; background:#e74c3c; color:white; border:none; padding:5px 10px; border-radius:4px;}
+#modalSearch {width:100%; padding:8px; margin:10px 0; font-size:14px; border-radius:4px; border:1px solid #ccc;}
+</style>
+</head>
+<body>
+
+<header>
+<h1>Companies & Employees</h1>
+<div class="header-buttons">
+    <button class="view-all-btn" onclick="openModal()">View All Employees</button>
+    <button class="attendance-btn" onclick="openAttendanceModal()">Daily Attendance</button>
+</div>
+</header>
+
+<div class="container" id="companyContainer"></div>
+
+<!-- Employees Modal -->
+<div class="modal-bg" id="modalBg">
+    <div class="modal">
+        <button class="close-modal" onclick="closeModal()">Close</button>
+        <h2>All Employees</h2>
+        <input type="text" id="modalSearch" placeholder="Search employees by name..." onkeyup="filterModal()">
+        <div id="allEmployeesTable"></div>
+    </div>
+</div>
+
+<!-- Attendance Modal -->
+<div class="modal-bg" id="attendanceModalBg">
+    <div class="modal">
+        <button class="close-modal" onclick="closeAttendanceModal()">Close</button>
+        <h2>30-Day Attendance</h2>
+        <div id="attendanceTable"></div>
+    </div>
+</div>
+
+<script>
+const companies=[];
+const companyNames=["Tata Consultancy Services","Reliance Industries","Infosys","HDFC Bank","ICICI Bank","Wipro","Larsen & Toubro","Bharti Airtel","State Bank of India","Indian Oil Corporation","Hindustan Unilever","Bajaj Finserv","Maruti Suzuki","Tech Mahindra","Adani Group"];
+const employeeNames=["Aarav Sharma","Ananya Gupta","Rohan Mehta","Saanvi Kapoor","Vivaan Singh","Ishita Joshi","Aditya Rao","Myra Iyer","Karthik Reddy","Diya Nair","Aryan Patel","Tara Desai","Kabir Malhotra","Meera Chawla","Vihaan Kumar","Sneha Verma","Raghav Bansal","Aisha Khan","Devansh Jha","Naina Agarwal"];
+
+function generateSalary() {
+    const noOfDays=Math.floor(Math.random()*31)+1;
+    const rate=Math.floor(Math.random()*1000)+500;
+    const total=noOfDays*rate;
+    const ot=Math.floor(Math.random()*10);
+    const otRate=Math.floor(rate*1.5);
+    const grt=total+(ot*otRate);
+    const totalRation=Math.floor(Math.random()*500);
+    const advance=Math.floor(Math.random()*1000);
+    const ushde=Math.floor(Math.random()*200);
+    const tDedu=Math.floor(Math.random()*300);
+    const netSalary=grt+totalRation-advance-ushde-tDedu;
+    return {noOfDays, rate, total, ot, otRate, grt, totalRation, advance, ushde, tDedu, netSalary};
+}
+
+function generateAttendance30Days() {
+    const days=[];
+    for(let i=0;i<30;i++){
+        days.push(Math.random()>0.2?"P":"A");
+    }
+    return days;
+}
+
+// Create companies and employees
+for(let i=0;i<companyNames.length;i++){
+    const employees=[];
+    for(let j=0;j<5;j++){
+        const randomIndex=Math.floor(Math.random()*employeeNames.length);
+        const salary=generateSalary();
+        const attendance=generateAttendance30Days();
+        employees.push({name:employeeNames[randomIndex], salary, attendance});
+    }
+    companies.push({name:companyNames[i], employees});
+}
+
+// Front page company tables
+const container=document.getElementById("companyContainer");
+companies.forEach((company,index)=>{
+    const div=document.createElement("div");
+    div.className="company";
+
+    let tableHTML=`<div class="employee-table" id="table${index}">
+        <table>
+            <tr>
+                <th>Employee Name</th><th>No. of Days</th><th>Rate</th><th>Total</th>
+                <th>OT</th><th>OT Rate</th><th>GRT</th><th>Total Ration</th>
+                <th>Advance</th><th>U/Shde</th><th>T.Dedu</th><th>Net Salary</th>
+            </tr>
+            ${company.employees.map(e=>{
+                const s=e.salary;
+                return `<tr>
+                    <td>${e.name}</td><td>${s.noOfDays}</td><td>${s.rate}</td><td>${s.total}</td>
+                    <td>${s.ot}</td><td>${s.otRate}</td><td>${s.grt}</td><td>${s.totalRation}</td>
+                    <td>${s.advance}</td><td>${s.ushde}</td><td>${s.tDedu}</td><td>${s.netSalary}</td>
+                </tr>`;
+            }).join("")}
+        </table>
+    </div>`;
+
+    div.innerHTML=`<h2>${company.name}</h2>${tableHTML}`;
+    div.onclick = () => {
+        const tbl = document.getElementById(`table${index}`);
+        tbl.style.display = tbl.style.display === "block" ? "none" : "block";
+    };
+    container.appendChild(div);
+});
+
+// Employees Modal Functions
+function openModal(){
+    const modal=document.getElementById("modalBg");
+    modal.style.display="flex";
+
+    const tableContainer=document.getElementById("allEmployeesTable");
+    let html='';
+    companies.forEach(c=>{
+        html+=`<h3>${c.name}</h3>`;
+        html+=`<table>
+            <tr>
+                <th>Employee Name</th><th>No. of Days</th><th>Rate</th><th>Total</th>
+                <th>OT</th><th>OT Rate</th><th>GRT</th><th>Total Ration</th>
+                <th>Advance</th><th>U/Shde</th><th>T.Dedu</th><th>Net Salary</th>
+            </tr>
+            ${c.employees.map(e=>{
+                const s=e.salary;
+                return `<tr>
+                    <td>${e.name}</td><td>${s.noOfDays}</td><td>${s.rate}</td><td>${s.total}</td>
+                    <td>${s.ot}</td><td>${s.otRate}</td><td>${s.grt}</td><td>${s.totalRation}</td>
+                    <td>${s.advance}</td><td>${s.ushde}</td><td>${s.tDedu}</td><td>${s.netSalary}</td>
+                </tr>`;
+            }).join("")}
+        </table>`;
+    });
+    tableContainer.innerHTML=html;
+}
+
+function closeModal(){
+    document.getElementById("modalBg").style.display="none";
+    document.getElementById("modalSearch").value="";
+}
+
+function filterModal(){
+    const input=document.getElementById("modalSearch").value.toLowerCase();
+    const tableContainer=document.getElementById("allEmployeesTable");
+    const tables=tableContainer.getElementsByTagName("table");
+    const headings=tableContainer.getElementsByTagName("h3");
+
+    for(let i=0;i<tables.length;i++){
+        let rows=tables[i].getElementsByTagName("tr");
+        let showTable=false;
+        for(let j=1;j<rows.length;j++){
+            const nameCell=rows[j].getElementsByTagName("td")[0];
+            if(nameCell.textContent.toLowerCase().includes(input)){
+                rows[j].style.display="";
+                showTable=true;
+            } else rows[j].style.display="none";
+        }
+        headings[i].style.display=showTable?"":"none";
+        tables[i].style.display=showTable?"":"none";
+    }
+}
+
+// Attendance Modal Functions
+function openAttendanceModal(){
+    const modal=document.getElementById("attendanceModalBg");
+    modal.style.display="flex";
+
+    const tableContainer=document.getElementById("attendanceTable");
+    let html='';
+    companies.forEach(c=>{
+        html+=`<h3>${c.name}</h3>`;
+        html+=`<table>
+            <tr><th>Employee Name</th>${Array.from({length:30},(_,i)=>`<th>Day ${i+1}</th>`).join('')}</tr>
+            ${c.employees.map(e=>{
+                return `<tr><td>${e.name}</td>${e.attendance.map(a=>`<td>${a}</td>`).join('')}</tr>`;
+            }).join("")}
+        </table>`;
+    });
+    tableContainer.innerHTML=html;
+}
+
+function closeAttendanceModal(){
+    document.getElementById("attendanceModalBg").style.display="none";
+}
+</script>
+
+</body>
+</html>
